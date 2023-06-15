@@ -1,0 +1,48 @@
+name: Main
+on:
+  push:
+    tags:
+      - "v*.*.*"
+env:
+  PLUGIN_NAME: OfflineWhitelistReforged
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Get version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+
+      - name: Echo Version
+        run: echo ${{ steps.get_version.outputs.VERSION }}
+      - name: Echo App
+        run : ls -la
+
+      - name: ZIP
+        run: zip -r ${{ env.PLUGIN_NAME }}-${{ steps.get_version.outputs.VERSION }}.zip ./ -x './.gitignore' -x './.github/*' -x './.git/*' -x '*.DS_Store'
+
+      - name: MCDR
+        run: mv ${{ env.PLUGIN_NAME }}-${{ steps.get_version.outputs.VERSION }}.zip ${{ env.PLUGIN_NAME }}-${{ steps.get_version.outputs.VERSION }}.mcdr
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: ${{ env.PLUGIN_NAME }}-${{ steps.get_version.outputs.VERSION }}.mcdr
+          path: ./${{ env.PLUGIN_NAME }}-${{ steps.get_version.outputs.VERSION }}.mcdr
+
+      - name: Upload to Github release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ env.PLUGIN_NAME }}-${{ steps.get_version.outputs.VERSION }}.mcdr
+          tag_name: ${{ steps.get_version.outputs.VERSION }}
+
+
+
+
+

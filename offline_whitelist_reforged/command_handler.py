@@ -1,9 +1,8 @@
 from typing import List
 
-from mcdreforged.api.types import PluginServerInterface
-from mcdreforged.command.builder.nodes.arguments import Text
-from mcdreforged.command.builder.tools import SimpleCommandBuilder
+from mcdreforged.api.all import *
 
+from offline_whitelist_reforged import Config
 from offline_whitelist_reforged.util import PlayerInfo
 from offline_whitelist_reforged.util import replace_code, generate_offline_uuid, save_whitelist
 
@@ -26,10 +25,11 @@ def help_info(server):
 class CommandHandler:
     server: PluginServerInterface
 
-    def __init__(self, server: PluginServerInterface, whitelist: List[PlayerInfo]):
+    def __init__(self, server: PluginServerInterface, config: Config, whitelist: List[PlayerInfo]):
         self.server = server
         self.register_commands()
         self.whitelist = whitelist
+        self.config = config
 
     def register_commands(self):
         server = self.server
@@ -42,14 +42,15 @@ class CommandHandler:
         command_builder.command('!!wr off', self.disable_whitelist)
         command_builder.command('!!wr list', self.get_list)
         command_builder.command('!!wr add <player>', self.add_player)
-        command_builder.command('!!wr remove <player>', self.remove_player)
+        command_builder.command('!!wr remove <rm_player>', self.remove_player)
         command_builder.arg('player', Text)
+        command_builder.arg('rm_player', Text).suggests(lambda: [player.name for player in self.whitelist])
         command_builder.register(server)
 
     def get_list(self, server):
 
-        if self.server.get_permission_level(server) < 2:
-            resp = f'&c你没有权限查看白名单，请确保权限等级不低于HELPER'
+        if self.server.get_permission_level(server) < self.config.perms.list:
+            resp = f'&c你没有权限查看白名单，请确保权限等级不低于{PermissionLevel.from_value(self.config.perms.list)}'
         else:
             resp = '---- &a白名单 &r----\n'
             sorted_list = sorted(self.whitelist, key=lambda p: p.name)
@@ -61,8 +62,8 @@ class CommandHandler:
         server.reply(replace_code(resp))
 
     def add_player(self, server, context):
-        if self.server.get_permission_level(server) < 3:
-            resp = f'&c你没有权限添加白名单，请确保权限等级不低于ADMIN'
+        if self.server.get_permission_level(server) < self.config.perms.add:
+            resp = f'&c你没有权限添加白名单，请确保权限等级不低于{PermissionLevel.from_value(self.config.perms.add)}'
         else:
             resp = None
             player = context['player']
@@ -73,20 +74,20 @@ class CommandHandler:
             # 白名单列表没有，添加白名单,由于不能使用自带的指令，要覆盖白名单json后重新加载
             if resp is None:
                 self.whitelist.append(PlayerInfo(player, generate_offline_uuid(player)))
-                save_whitelist(whitelist=self.whitelist)
+                save_whitelist(server=server, whitelist=self.whitelist)
                 resp = f'&a玩家{player}已添加至白名单'
                 self.server.execute('whitelist reload')
         server.reply(replace_code(resp))
 
     def remove_player(self, server, context):
-        if self.server.get_permission_level(server) < 3:
-            resp = f'&c你没有权限移除白名单，请确保权限等级不低于ADMIN'
+        if self.server.get_permission_level(server) < self.config.perms.remove:
+            resp = f'&c你没有权限移除白名单，请确保权限等级不低于{PermissionLevel.from_value(self.config.perms.remove)}'
         else:
             player = context['player']
             for p in self.whitelist:
                 if p.name == player:
                     after_whitelist = [x for x in self.whitelist if x.name != player]
-                    save_whitelist(after_whitelist)
+                    save_whitelist(server=server, whitelist=after_whitelist)
                     self.server.execute(f'whitelist reload')
                     server.reply(replace_code(f'&a已经移除{player}的白名单'))
                     self.whitelist = after_whitelist
@@ -95,16 +96,16 @@ class CommandHandler:
         server.reply(replace_code(resp))
 
     def enable_whitelist(self, server):
-        if self.server.get_permission_level(server) < 3:
-            resp = f'&c你没有权限打开白名单，请确保权限等级不低于ADMIN'
+        if self.server.get_permission_level(server) < self.config.perms.on:
+            resp = f'&c你没有权限打开白名单，请确保权限等级不低于{PermissionLevel.from_value(self.config.perms.on)}'
         else:
             self.server.execute('whitelist on')
             resp = f'&a白名单已打开'
         server.reply(replace_code(resp))
 
     def disable_whitelist(self, server):
-        if self.server.get_permission_level(server) < 4:
-            resp = f'&c你没有权限关闭白名单，请确保权限等级不低于OWNER'
+        if self.server.get_permission_level(server) < self.config.perms.off:
+            resp = f'&c你没有权限关闭白名单，请确保权限等级不低于{PermissionLevel.from_value(self.config.perms.off)}'
         else:
             self.server.execute('whitelist off')
             resp = f'&e白名单已关闭'

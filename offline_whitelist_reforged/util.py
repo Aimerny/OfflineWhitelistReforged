@@ -2,10 +2,7 @@ import hashlib
 import json
 from typing import List
 from uuid import UUID
-
-
-whitelist_path = "./server/whitelist.json"
-# whitelist_path = "whitelist.json"
+from mcdreforged.api.all import *
 
 
 class PlayerInfo:
@@ -17,7 +14,10 @@ class PlayerInfo:
         self.uuid = uuid
 
 
-def load_whitelist() -> List[PlayerInfo]:
+def load_whitelist(server: ServerInterface) -> List[PlayerInfo]:
+    mcdr_config = server.get_mcdr_config()
+    server_path = mcdr_config.get('working_directory')
+    whitelist_path = f'{server_path}/whitelist.json'
     whitelist = []
     with open(whitelist_path, 'r', encoding='UTF-8') as f:
         whitelist_json = json.load(f)
@@ -26,7 +26,10 @@ def load_whitelist() -> List[PlayerInfo]:
     return whitelist
 
 
-def save_whitelist(whitelist: List[PlayerInfo]):
+def save_whitelist(server: ServerInterface, whitelist: List[PlayerInfo]):
+    mcdr_config = server.get_mcdr_config()
+    server_path = mcdr_config.get('working_directory')
+    whitelist_path = f'{server_path}/whitelist.json'
     whitelist_json = []
     for player_info in whitelist:
         whitelist_json.append({'uuid': player_info.uuid, 'name': player_info.name})

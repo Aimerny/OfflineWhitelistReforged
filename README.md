@@ -14,12 +14,22 @@
 
 ## 权限要求
 
-使用MCDR的权限系统
-
+使用MCDR的权限系统,权限要求由配置文件配置,默认如下
+```json5
+{
+    "perms": {
+        "on": 4, // owner
+        "off": 4, // owner
+        "list": 2, // helper
+        "add": 3, // admin
+        "remove": 3 //admin
+    }
+}
+```
 `help`: 无权限要求
 
 `list`: helper及以上
 
-`add`,`remove`,`on`: admin及以上
+`add`,`remove`: admin及以上
 
-`off`: 仅owner(控制台权限等同于owner)
+`off, on`: 仅owner(控制台权限等同于owner)

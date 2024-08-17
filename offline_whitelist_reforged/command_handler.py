@@ -61,8 +61,8 @@ class CommandHandler:
             resp = resp + f'---- &a共{len(sorted_list)}人 &r----'
         server.reply(replace_code(resp))
 
-    def add_player(self, server, context):
-        if self.server.get_permission_level(server) < self.config.perms.add:
+    def add_player(self, source, context):
+        if self.server.get_permission_level(source) < self.config.perms.add:
             resp = f'&c你没有权限添加白名单，请确保权限等级不低于{PermissionLevel.from_value(self.config.perms.add)}'
         else:
             resp = None
@@ -74,26 +74,26 @@ class CommandHandler:
             # 白名单列表没有，添加白名单,由于不能使用自带的指令，要覆盖白名单json后重新加载
             if resp is None:
                 self.whitelist.append(PlayerInfo(player, generate_offline_uuid(player)))
-                save_whitelist(server=server, whitelist=self.whitelist)
+                save_whitelist(server=self.server, whitelist=self.whitelist)
                 resp = f'&a玩家{player}已添加至白名单'
                 self.server.execute('whitelist reload')
-        server.reply(replace_code(resp))
+        source.reply(replace_code(resp))
 
-    def remove_player(self, server, context):
-        if self.server.get_permission_level(server) < self.config.perms.remove:
+    def remove_player(self, source: CommandSource, context: CommandContext):
+        if self.server.get_permission_level(source) < self.config.perms.remove:
             resp = f'&c你没有权限移除白名单，请确保权限等级不低于{PermissionLevel.from_value(self.config.perms.remove)}'
         else:
-            player = context['player']
+            player = context.get('rm_player')
             for p in self.whitelist:
                 if p.name == player:
                     after_whitelist = [x for x in self.whitelist if x.name != player]
-                    save_whitelist(server=server, whitelist=after_whitelist)
+                    save_whitelist(server=self.server, whitelist=after_whitelist)
                     self.server.execute(f'whitelist reload')
-                    server.reply(replace_code(f'&a已经移除{player}的白名单'))
+                    source.reply(replace_code(f'&a已经移除{player}的白名单'))
                     self.whitelist = after_whitelist
                     return
             resp = f'&e玩家{player}不在白名单中'
-        server.reply(replace_code(resp))
+        source.reply(replace_code(resp))
 
     def enable_whitelist(self, server):
         if self.server.get_permission_level(server) < self.config.perms.on:

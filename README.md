@@ -1,3 +1,6 @@
+> [!warning]
+> 本仓库永久停止更新，插件已经被移动到如下仓库进行维护: [MCDRPlugins](https://github.com/Aimerny/MCDRPlugins)
+
 # OfflineWhiteListReforged
 
 简单小巧的离线服白名单管理插件
